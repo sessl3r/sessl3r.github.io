@@ -51,6 +51,39 @@ function getTagDe(basetag, e) {
     return ret;
 }
 
+// copied and adapted from OverPassLayer.js
+function getPoiPopupHTML(tags, id) {
+    let row;
+    const link = document.createElement('a');
+    const table = document.createElement('table');
+    const div = document.createElement('div');
+
+    link.href = `https://www.openstreetmap.org/edit?editor=id&node=${id}`;
+    link.appendChild(document.createTextNode('Edit this entry in iD'));
+
+    table.style.borderSpacing = '10px';
+    table.style.borderCollapse = 'separate';
+
+    for (const key in tags) {
+      row = table.insertRow(0);
+      row.insertCell(0).appendChild(document.createTextNode(key));
+      if (key == "mapillary") {
+	let node = document.createElement('a');
+	node.target = '_blank';
+	node.href = "https://www.mapillary.com/app/?focus=photo&pKey=" + tags[key];
+	node.innerHTML = tags[key];
+        row.insertCell(1).appendChild(node);
+      } else {
+        row.insertCell(1).appendChild(document.createTextNode(tags[key]));
+      }
+    }
+
+    div.appendChild(link);
+    div.appendChild(table);
+
+    return div;
+  }
+
 function OverPassLayer_OnSuccess(data) {
   for (let i = 0; i < data.elements.length; i++) {
     let pos;
@@ -76,21 +109,7 @@ function OverPassLayer_OnSuccess(data) {
       }
     }
 
-    const div = document.createElement('div');
-    const nTaxon = document.createElement('h2');
-    nTaxon.innerHTML = getTagDe('taxon', e);
-    div.appendChild(nTaxon);
-    const nSpecies = document.createElement('p');
-    nSpecies.innerHTML = getTagDe('species', e)
-    div.appendChild(nSpecies);
-
-    if ('mapillary' in e.tags) {
-      const imglink = document.createElement('a');
-      imglink.href = "https://www.mapillary.com/app/?focus=photo&pKey=" + e.tags.mapillary;
-      imglink.target = '_blank';
-      imglink.innerHTML = "Mapillary Image";
-      div.appendChild(imglink);
-    }
+    let popupContent = getPoiPopupHTML(e.tags, e.id);
 
     let tooltipname = getTagDe('taxon', e);
     if (tooltipname == "unknown") {
@@ -103,7 +122,6 @@ function OverPassLayer_OnSuccess(data) {
       className: 'obst-tooltip-overwrite',
       offset: new L.Point(0, 10),
     });
-    const popupContent = div;
     const popup = L.popup().setContent(popupContent);
     marker.bindPopup(popup);
     markers_trees.addLayer(marker);
