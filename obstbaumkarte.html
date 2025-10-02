@@ -128,6 +128,7 @@ function OverPassLayer_OnSuccess(data) {
   }
 }
 
+/* Icon definitions */
 const icon_unknown = L.icon({
     iconSize: [48, 48],
     iconAnchor: [24, 24],
@@ -144,37 +145,42 @@ const icon_pyrus = L.icon({
     iconUrl: 'https://img.icons8.com/ios/50/pear.png',
 });
 
-const map = new L.map('map').setView([48.29, 10.201], 19);
-
-const osm = new L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+/* map and maplayer definitions */
+const layer_osm = new L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 25,
-    attribution:
-        'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | ' +
-        'POI via <a href="http://www.overpass-api.de/">Overpass API</a> | ' + 
-        'Icons via <a href="https://icons8.com">Icons8</a>',
+    attribution: 'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 });
 
-var esri = new L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+const layer_esri_world_imagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 25,
     maxNativeZoom: 19,
-    opacity: 0.4,
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
 });
 
-const opl = new L.OverPassLayer({
-  'query': '(node({{bbox}})[natural=tree][species];);out qt;',
-  'minZoom': 13,
-  'debug': true,
-  'onSuccess': OverPassLayer_OnSuccess,
+const layer_trees = new L.OverPassLayer({
+  query: '(node({{bbox}})[natural=tree][species];);out qt;',
+  minZoom: 13,
+  debug: true,
+  onSuccess: OverPassLayer_OnSuccess,
+  attribution: 'POI via <a href="http://www.overpass-api.de/">Overpass API</a> | Icons via <a href="https://icons8.com">Icons8</a>',
 });
-
-/* cluster markers */
 const markers_trees = new L.markerClusterGroup();
 
-map.addLayer(osm);
-map.addLayer(esri);
-map.addLayer(opl);
-map.addLayer(markers_trees);
+const base_layers = {
+    'OpenStreetMap': layer_osm,
+    'ESRI World Imagery': layer_esri_world_imagery,
+};
+
+const overlay_layers = {
+    'Trees': markers_trees,
+};
+
+const map = new L.map('map', {
+    center: [48.29, 10.201],
+    zoom: 19,
+    layers: [layer_osm, layer_trees, markers_trees],
+});
+const layer_control = new L.control.layers(base_layers, overlay_layers).addTo(map);
 
   </script>
 
