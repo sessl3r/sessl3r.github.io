@@ -92,8 +92,12 @@ function OverPassLayer_OnSuccess(data) {
       div.appendChild(imglink);
     }
 
+    let tooltipname = getTagDe('taxon', e);
+    if (tooltipname == "unknown") {
+      tooltipname = getTagDe('species', e);
+    }
     let marker = L.marker(pos, {icon: icon});
-    marker.bindTooltip(getTagDe('taxon', e), {
+    marker.bindTooltip(tooltipname, {
       permanent: true,
       direction: 'bottom',
       className: 'obst-tooltip-overwrite',
