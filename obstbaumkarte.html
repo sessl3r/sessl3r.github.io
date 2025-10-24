@@ -120,7 +120,7 @@ function OverPassLayer_OnSuccess(data) {
       permanent: true,
       direction: 'bottom',
       className: 'obst-tooltip-overwrite',
-      offset: new L.Point(0, 10),
+      offset: new L.Point(0, 0),
     });
     const popup = L.popup().setContent(popupContent);
     marker.bindPopup(popup);
@@ -129,19 +129,20 @@ function OverPassLayer_OnSuccess(data) {
 }
 
 /* Icon definitions */
+const icon_size = 20;
 const icon_unknown = L.icon({
-    iconSize: [48, 48],
-    iconAnchor: [24, 24],
+    iconSize: [icon_size, icon_size],
+    iconAnchor: [icon_size/2, icon_size/2],
     iconUrl: 'https://img.icons8.com/pulsar-line/48/tree.png'
 });
 const icon_malus = L.icon({
-    iconSize: [50, 50],
-    iconAnchor: [25, 25],
+    iconSize: [icon_size, icon_size],
+    iconAnchor: [icon_size/2, icon_size/2],
     iconUrl: 'https://img.icons8.com/ios/50/apple.png',
 });
 const icon_pyrus = L.icon({
-    iconSize: [50, 50],
-    iconAnchor: [25, 25],
+    iconSize: [icon_size, icon_size],
+    iconAnchor: [icon_size/2, icon_size/2],
     iconUrl: 'https://img.icons8.com/ios/50/pear.png',
 });
 
@@ -157,6 +158,11 @@ const layer_esri_world_imagery = L.tileLayer('https://server.arcgisonline.com/Ar
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
 });
 
+const layer_google_maps = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+});
+
 const layer_trees = new L.OverPassLayer({
   query: '(node({{bbox}})[natural=tree][species];);out qt;',
   minZoom: 13,
@@ -169,6 +175,7 @@ const markers_trees = new L.markerClusterGroup();
 const base_layers = {
     'OpenStreetMap': layer_osm,
     'ESRI World Imagery': layer_esri_world_imagery,
+    'Google Maps': layer_google_maps,
 };
 
 const overlay_layers = {
