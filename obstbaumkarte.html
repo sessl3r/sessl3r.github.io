@@ -29,6 +29,14 @@
 .obst-tooltip-overwrite::before {
   display:none;
 }
+
+.d-none {
+  display:none;
+}
+
+.mapillary-img {
+  width:100%;
+}
   </style>
 
 </head>
@@ -37,7 +45,11 @@
   <div id="map"></div>
 
   <!-- MAIN -->
-  <script>
+  <script defer>
+
+mycache = {
+  mapillary: {},
+};
 
 /* Get a tag from an OSM element, but prioritze :de version if available */
 function getTagDe(basetag, e) {
@@ -51,40 +63,46 @@ function getTagDe(basetag, e) {
     return ret;
 }
 
-// copied and adapted from OverPassLayer.js
-function getPoiPopupHTML(tags, id) {
-    let row;
-    const link = document.createElement('a');
-    const table = document.createElement('table');
-    const div = document.createElement('div');
-
-    link.href = `https://www.openstreetmap.org/edit?editor=id&node=${id}`;
-    link.appendChild(document.createTextNode('Edit this entry in iD'));
-
-    table.style.borderSpacing = '10px';
-    table.style.borderCollapse = 'separate';
-
-    for (const key in tags) {
-      row = table.insertRow(0);
-      row.insertCell(0).appendChild(document.createTextNode(key));
-      if (key == "mapillary") {
-	let node = document.createElement('a');
-	node.target = '_blank';
-	node.href = "https://www.mapillary.com/app/?focus=photo&pKey=" + tags[key];
-	node.innerHTML = tags[key];
-        row.insertCell(1).appendChild(node);
-      } else {
-        row.insertCell(1).appendChild(document.createTextNode(tags[key]));
-      }
-    }
-
-    div.appendChild(link);
-    div.appendChild(table);
-
-    return div;
+// retrieve image url from mapillary api
+async function getMapillaryUrl(id) {
+  if (id in mycache.mapillary) {
+    return mycache.mapillary[id];
   }
 
-function OverPassLayer_OnSuccess(data) {
+  const params = new URLSearchParams({
+    fields: 'thumb_1024_url',
+    access_token: 'MLY|29846375581644343|ee420adbcfa656334152a6bc99b85f93',
+  });
+
+  const response = await fetch(`https://graph.mapillary.com/${id}?${params}`);
+  const json = await response.json();
+  mycache.mapillary[id] = json.thumb_1024_url;
+  return json.thumb_1024_url;
+}
+
+async function getPoiPopupHTML(tags, id) {
+  const div = document.createElement('div');
+  let html = "";
+  div.id = "popup-osm-" + id;
+  let titel = "";
+  if ('species:de' in tags) {
+    titel += tags['species:de'];
+  } else if (tags.species) {
+    titel += tags.species;
+  }
+  if (tags.taxon) {
+    titel += " : " + tags.taxon;
+  }
+  html = `<h3>${titel}</h3>`;
+  if (tags.mapillary) {
+    html += `<a href='https://www.mapillary.com/app/?focus=photo&pKey=${tags.mapillary}' target='_blank'><img class='mapillary-img' src=''></a>`
+  }
+
+  div.innerHTML = html;
+  return div;
+}
+
+async function OverPassLayer_OnSuccess(data) {
   for (let i = 0; i < data.elements.length; i++) {
     let pos;
     const e = data.elements[i];
@@ -109,13 +127,22 @@ function OverPassLayer_OnSuccess(data) {
       }
     }
 
-    let popupContent = getPoiPopupHTML(e.tags, e.id);
+    let popupContent = await getPoiPopupHTML(e.tags, e.id);
 
     let tooltipname = getTagDe('taxon', e);
     if (tooltipname == "unknown") {
       tooltipname = getTagDe('species', e);
     }
+
     let marker = L.marker(pos, {icon: icon});
+    marker.mydata = e;
+    marker.on('click', async function(e) {
+      if (!e.target.mydata.tags.hasOwnProperty('mapillary')) { return; }
+      let url = await getMapillaryUrl(e.target.mydata.tags.mapillary);
+      let node = e.target._popup._content.getElementsByTagName('img')[0];
+      node.src = url;
+
+    });
     marker.bindTooltip(tooltipname, {
       permanent: true,
       direction: 'bottom',
@@ -149,6 +176,7 @@ const icon_pyrus = L.icon({
 /* map and maplayer definitions */
 const layer_osm = new L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 25,
+    maxNativeZoom: 19,
     attribution: 'Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
 });
 
@@ -159,7 +187,8 @@ const layer_esri_world_imagery = L.tileLayer('https://server.arcgisonline.com/Ar
 });
 
 const layer_google_maps = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
-    maxZoom: 20,
+    maxZoom: 25,
+    maxNativeZoom: 21,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
 });
 
