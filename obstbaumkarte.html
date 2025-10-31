@@ -186,12 +186,14 @@ const layer_osm = new L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.pn
 const layer_esri_world_imagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 25,
     maxNativeZoom: 19,
+    opacity: 0.4,
     attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
 });
 
 const layer_google_maps = L.tileLayer('https://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
     maxZoom: 25,
     maxNativeZoom: 21,
+    opacity: 0.4,
     subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
 });
 
@@ -206,20 +208,22 @@ const markers_trees = new L.markerClusterGroup();
 
 const base_layers = {
     'OpenStreetMap': layer_osm,
-    'ESRI World Imagery': layer_esri_world_imagery,
-    'Google Maps': layer_google_maps,
 };
 
 const overlay_layers = {
     'Trees': markers_trees,
+    'ESRI World Imagery': layer_esri_world_imagery,
+    'Google Maps': layer_google_maps,
 };
 
 const map = new L.map('map', {
-    center: [48.29, 10.201],
-    zoom: 19,
+    center: [48.29, 10.229],
+    zoom: 14,
     layers: [layer_osm, layer_trees, markers_trees],
 });
 const layer_control = new L.control.layers(base_layers, overlay_layers).addTo(map);
+console.log("locating");
+map.locate({setView: true, maxZoom: 15});
 
   </script>
 
